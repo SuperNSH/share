@@ -1,0 +1,8 @@
+{
+  "name": "nsh-share tests",
+  "id": "dev.supernsh.share.tests",
+  "version": "0.1.0",
+  "build": 1,
+  "rust": "../../crates/nsh-share",
+  "capabilities": {}
+}

@@ -1,0 +1,49 @@
+[package]
+name = "nsh-share"
+description = "Outbound share of text, URLs, files and images, and inbound share into the app."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+name = "nsh_share"
+path = "src/lib.rs"
+
+[dependencies]
+nsh-core = "0.4.0"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", default-features = false, features = ["sync", "time"] }
+
+# Apple: UIKit's activity sheet on iOS, NSSharingServicePicker on macOS, over the objc2 0.6
+# generation biometrics pins. UIKit links only on iOS builds, AppKit only on macOS builds.
+[target.'cfg(target_vendor = "apple")'.dependencies]
+block2 = "0.6.2"
+objc2 = { version = "0.6.5", default-features = false, features = ["std"] }
+objc2-core-foundation = { version = "0.3.2", default-features = false, features = ["CFCGTypes"] }
+objc2-foundation = { version = "0.3.2", default-features = false, features = ["NSArray", "NSBundle", "NSDictionary", "NSEnumerator", "NSError", "NSGeometry", "NSNotification", "NSObject", "NSOperation", "NSString", "NSURL", "NSUserDefaults", "NSValue", "block2", "objc2-core-foundation"] }
+objc2-app-kit = { version = "0.3.2", default-features = false, features = ["NSApplication", "NSResponder", "NSSharingService", "NSView", "NSWindow"] }
+objc2-ui-kit = { version = "0.3.2", default-features = false, features = ["UIActivity", "UIActivityViewController", "UIApplication", "UIDevice", "UIPopoverPresentationController", "UIPresentationController", "UIScene", "UIResponder", "UIViewController", "UIView", "UIWindow", "UIWindowScene", "block2", "objc2-core-foundation"] }
+
+# Android: the chooser and the launching intent over JNI; ndk-context carries the VM and the
+# activity context.
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.22.4"
+ndk-context = "0.1.1"
+
+# Web: navigator.share, its promise plumbing, and the DOM types the anchor fallbacks click.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = "0.3"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = ["Document", "Element", "File", "FilePropertyBag", "HtmlAnchorElement", "HtmlElement", "Navigator", "Node", "Response", "ShareData", "Window"] }
+
+# Windows: the share sheet through DataTransferManager, shown for the foreground window.
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.62.2", features = ["ApplicationModel_DataTransfer", "Foundation", "Storage", "Win32_Foundation", "Win32_System_Threading", "Win32_System_WinRT", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
+# IIterable::from stages the storage files; join parks the session thread on staging.
+windows-collections = { version = "0.3.2", features = ["std"] }
+
+[dev-dependencies]
+tokio = { version = "1.54.1", default-features = false, features = ["rt", "time", "test-util"] }
