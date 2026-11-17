@@ -29,7 +29,7 @@ use std::collections::VecDeque;
 
 #[cfg(target_os = "ios")]
 use objc2::{
-    AnyThread, ClassType, msg_send,
+    AnyThread, ClassType, MainThreadOnly, msg_send,
     runtime::{Bool, NSObjectProtocol},
     sel,
 };
@@ -561,7 +561,7 @@ fn present(params: &ShareParams, staged: &[PathBuf], done: ShareDone, mtm: MainT
     // SAFETY: the items array holds NSString and NSURL objects, which the sheet accepts.
     let sheet = unsafe {
         UIActivityViewController::initWithActivityItems_applicationActivities(
-            UIActivityViewController::alloc(),
+            UIActivityViewController::alloc(mtm),
             items.as_super(),
             None,
         )

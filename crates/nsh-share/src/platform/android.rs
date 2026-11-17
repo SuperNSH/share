@@ -91,19 +91,17 @@ unsafe impl Sync for Ptrs {}
 static ANDROID: OnceLock<Option<Ptrs>> = OnceLock::new();
 
 fn pointers() -> Option<Ptrs> {
-    ANDROID
-        .get_or_init(|| {
-            // The getter panics on a fresh process; a silent hook keeps that out of the log.
-            let previous = std::panic::take_hook();
-            std::panic::set_hook(Box::new(|_| {}));
-            let probe = std::panic::catch_unwind(ndk_context::android_context);
-            std::panic::set_hook(previous);
-            probe.ok().map(|context| Ptrs {
-                vm: context.vm().cast(),
-                context: context.context().cast(),
-            })
+    *ANDROID.get_or_init(|| {
+        // The getter panics on a fresh process; a silent hook keeps that out of the log.
+        let previous = std::panic::take_hook();
+        std::panic::set_hook(Box::new(|_| {}));
+        let probe = std::panic::catch_unwind(ndk_context::android_context);
+        std::panic::set_hook(previous);
+        probe.ok().map(|context| Ptrs {
+            vm: context.vm().cast(),
+            context: context.context().cast(),
         })
-        .clone()
+    })
 }
 
 // --- JNI plumbing ------------------------------------------------------------------
@@ -480,7 +478,9 @@ fn provider_uri<'local>(
 /// One MIME type for many files: the one they share, their common `type/*`, or `*/*` —
 /// `share_plus`'s reduction, which the chooser's own listing follows.
 fn reduced_mime(mimes: &[String]) -> String {
-    let base = |mime: &str| mime.split('/').next().unwrap_or("*");
+    fn base(mime: &str) -> &str {
+        mime.split('/').next().unwrap_or("*")
+    }
     let mut common = mimes[0].clone();
     for mime in &mimes[1..] {
         if *mime == common {
@@ -1162,18 +1162,18 @@ fn parse_intent(
             // The intent's own MIME is the reduced one of the whole set (`*/*` for a mix); a
             // wildcard names no single item, so each file's extension speaks instead.
             let per_item = mime.filter(|mime| !mime.contains('*'));
+            // One closure for both calls: two closures cannot each hold `env` mutably.
             (0..count)
                 .filter_map(|at| {
-                    let streams = streams.as_ref()?;
-                    soft_object(
+                    let uri = soft_object(
                         env,
-                        streams,
+                        streams.as_ref()?,
                         jni_str!("get"),
                         jni_sig!("(I)Ljava/lang/Object;"),
                         &[JValue::Int(at)],
-                    )
+                    )?;
+                    stream_item(env, context, &uri, per_item.clone(), None)
                 })
-                .filter_map(|uri| stream_item(env, context, &uri, per_item.clone(), None))
                 .collect()
         }
         _ => Vec::new(),
@@ -1373,10 +1373,11 @@ fn watch(generation: u64) {
     // A watcher that could not attach strands its waiter — it was the only deliverer — so it
     // is answered with a coded failure, and only while this watcher's generation is current:
     // a retired one never resolves a newer session's waiter.
-    if attached.is_err() && generation == GENERATION.load(Ordering::SeqCst) {
-        if let Some(waiter) = listening().waiter.take() {
-            waiter(Err(ShareError::new(ErrorKind::NotAvailable)));
-        }
+    if attached.is_err()
+        && generation == GENERATION.load(Ordering::SeqCst)
+        && let Some(waiter) = listening().waiter.take()
+    {
+        waiter(Err(ShareError::new(ErrorKind::NotAvailable)));
     }
 }
 
@@ -1384,11 +1385,11 @@ fn watch(generation: u64) {
 
 impl Backend for NativeBackend {
     fn is_available(&self) -> BackendFuture<'_, Result<bool, ShareError>> {
-        Box::pin(query(false, |env, context| is_activity(env, context)))
+        Box::pin(query(false, is_activity))
     }
 
     fn can_receive(&self) -> BackendFuture<'_, Result<bool, ShareError>> {
-        Box::pin(query(false, |env, context| is_activity(env, context)))
+        Box::pin(query(false, is_activity))
     }
 
     fn start_share(&self, params: &ShareParams, done: ShareDone) -> Result<(), ShareError> {

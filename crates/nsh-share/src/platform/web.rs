@@ -91,10 +91,8 @@ fn click_anchor(window: &Window, href: &str, download: &str) {
         .body()
         .is_some_and(|body| body.append_child(&anchor).is_ok());
     anchor.click();
-    if attached {
-        if let Some(body) = document.body() {
-            let _ = body.remove_child(&anchor);
-        }
+    if attached && let Some(body) = document.body() {
+        let _ = body.remove_child(&anchor);
     }
 }
 
