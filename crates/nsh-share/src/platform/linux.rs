@@ -39,7 +39,10 @@ fn mailto_url(params: &ShareParams) -> Result<String, ShareError> {
     if !params.mail_to_fallback_enabled {
         return Err(ShareError::new(ErrorKind::NotAvailable));
     }
-    let content = |value: &Option<String>| value.as_deref().filter(|value| !value.is_empty());
+    // A nested fn, not a closure: a closure cannot tie the returned borrow to its argument.
+    fn content(value: &Option<String>) -> Option<&str> {
+        value.as_deref().filter(|value| !value.is_empty())
+    }
     let text = content(&params.text);
     let uri = content(&params.uri);
     // A bare desktop has no content provider, so a file has no URI to hand to a mail client;

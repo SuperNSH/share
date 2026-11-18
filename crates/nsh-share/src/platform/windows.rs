@@ -22,7 +22,7 @@ use windows::{
         UI::Shell::IDataTransferManagerInterop,
         UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId},
     },
-    core::{HSTRING, IInspectable, Interface, factory},
+    core::{HSTRING, IInspectable, Interface, Ref, factory},
 };
 
 use windows_collections::IIterable;
@@ -195,7 +195,9 @@ fn fill_package(
         }
     }
     if !items.is_empty() {
-        package.SetStorageItemsReadOnly(&IIterable::from(items.to_vec()))?;
+        // An interface's default value type is its `Option`, which is what the iterable stores.
+        let staged: Vec<Option<IStorageItem>> = items.iter().cloned().map(Some).collect();
+        package.SetStorageItemsReadOnly(&IIterable::<IStorageItem>::from(staged))?;
     }
     Ok(())
 }
@@ -219,7 +221,7 @@ fn sheet_flow(
             let session = Arc::clone(session);
             let sheet = sheet.clone();
             let items = Arc::new(items);
-            move |_, args| {
+            move |_: Ref<'_, DataTransferManager>, args: Ref<'_, DataRequestedEventArgs>| {
                 let args = args.ok().map_err(|error| bail(&session, error))?;
                 let request = args.Request().map_err(|error| bail(&session, error))?;
                 let package = request.Data().map_err(|error| bail(&session, error))?;
@@ -309,11 +311,16 @@ impl Backend for NativeBackend {
         let session = Arc::new(Session::new(done, wake));
         // The session thread hosts the share off the engine's threads; the callback leaves with
         // it, so a spawn failure must still answer.
+        // HWND is a raw pointer and not `Send`; the thread rebuilds it from its address.
+        let window = hwnd.0 as usize;
         let spawned = {
             let session = Arc::clone(&session);
             thread::Builder::new()
                 .name("nsh-share-sheet".into())
-                .spawn(move || run_session(&session, hwnd, &sheet, &paths, wake_rx))
+                .spawn(move || {
+                    let hwnd = HWND(window as *mut core::ffi::c_void);
+                    run_session(&session, hwnd, &sheet, &paths, wake_rx)
+                })
         };
         match spawned {
             Ok(_) => Ok(()),
