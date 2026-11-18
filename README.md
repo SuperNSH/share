@@ -6,7 +6,9 @@ Part of the Native Shell (NSH) capability set. Same layout as the other SuperNSH
 
 ## Status
 
-**Implemented at the unit-test level.** The behaviors — one sheet at a time, exactly-once resolution, the six stable error codes, the cold-start read — are proven by `cargo test` and `nsh test` in CI, through the fake backend. Each bridge compiles in CI, in the job that owns its target: macOS and Windows in the rust job's OS matrix, iOS, Android and web in the cross-check job's targets. No device or emulator has run this code; nothing here is device-verified. [docs/goals.md](docs/goals.md) lists every behavior and the test that proves it.
+**Implemented at the unit-test level.** The behaviors — one sheet at a time, exactly-once resolution, the six stable error codes, the cold-start read — are proven by `cargo test` and `nsh test` in CI, through the fake backend. Each bridge compiles in CI, in the job that owns its target: macOS and Windows in the rust job's OS matrix, iOS, Android and web in the cross-check job's targets. No device or emulator has run this code; nothing here is device-verified.
+
+Verified in CI run https://github.com/SuperNSH/share/actions/runs/44402212238 (commit `e0c4be6`, NSH 0.6.0): every job green — format; rust on ubuntu, macos and windows (clippy and `cargo test --all-targets`); the compile checks for `aarch64-apple-ios`, `aarch64-apple-ios-sim`, `aarch64-linux-android` and `wasm32-unknown-unknown`; and typescript (`nsh check`, `nsh build` without warnings, `nsh test`). The Linux and Windows bridges first compiled in this run's lineage, after fixes in `e2d4d08`, `c805bec` and `e0c4be6`. Blocked: a real sheet, a real intent and the iPad popover need a device, so they stay unverified. The crate keeps its own bridges rather than NSH 0.6.0's `Command::Share`; see `docs/decisions.md` entry 4. [docs/goals.md](docs/goals.md) lists every behavior and the test that proves it.
 
 ## Layout
 
