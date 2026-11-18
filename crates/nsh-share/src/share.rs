@@ -369,7 +369,7 @@ mod tests {
             let params = ShareParams {
                 text: Some("Look".to_owned()),
                 files: vec![ShareFile {
-                    path: "/tmp".to_owned(),
+                    path: std::env::temp_dir().to_string_lossy().into_owned(),
                     mime_type: Some("image/png".to_owned()),
                 }],
                 ..ShareParams::default()
@@ -581,7 +581,7 @@ mod tests {
                     share
                         .share_files(
                             vec![ShareFile {
-                                path: "/tmp".to_owned(),
+                                path: std::env::temp_dir().to_string_lossy().into_owned(),
                                 mime_type: None,
                             }],
                             Some("A file".to_owned()),

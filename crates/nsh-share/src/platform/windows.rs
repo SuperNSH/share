@@ -79,7 +79,7 @@ fn sheet_from_params(params: &ShareParams) -> Sheet {
     let content = |value: &Option<String>| {
         value
             .as_deref()
-            .filter(|v| !v.is_empty())
+            .filter(|v| !v.trim().is_empty())
             .map(str::to_owned)
     };
     let text = content(&params.text);
