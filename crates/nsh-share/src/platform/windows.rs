@@ -172,6 +172,14 @@ fn stage_files(paths: &[String]) -> windows::core::Result<Vec<IStorageItem>> {
     Ok(items)
 }
 
+/// The staged items, movable into the event handler, which the bindings require to be `Send`.
+struct Staged(Vec<IStorageItem>);
+
+// SAFETY: StorageFile is an agile WinRT class and this session runs in the MTA, so its
+// interface pointers may be used from whichever thread the handler is invoked on.
+unsafe impl Send for Staged {}
+unsafe impl Sync for Staged {}
+
 /// Fills the package the system created for the sheet: the caption, the description and text,
 /// the URI when it parses, and the staged files.
 fn fill_package(
@@ -220,14 +228,14 @@ fn sheet_flow(
         TypedEventHandler::new({
             let session = Arc::clone(session);
             let sheet = sheet.clone();
-            let items = Arc::new(items);
+            let items = Arc::new(Staged(items));
             move |_: Ref<'_, DataTransferManager>, args: Ref<'_, DataRequestedEventArgs>| {
                 let args = args.ok().map_err(|error| bail(&session, error))?;
                 let request = args.Request().map_err(|error| bail(&session, error))?;
                 let package = request.Data().map_err(|error| bail(&session, error))?;
                 // A fill failure has no later event to wait for, so it resolves here and the
                 // sheet is told why it got nothing.
-                if let Err(error) = fill_package(&package, &sheet, &items) {
+                if let Err(error) = fill_package(&package, &sheet, &items.0) {
                     session.resolve(Err(backend_error(error.clone())));
                     let _ = request
                         .FailWithDisplayText(&HSTRING::from("The share could not be prepared."));
