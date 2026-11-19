@@ -1,5 +1,5 @@
 #!/bin/sh
-# Primes the repo's cargo cache with the dependency tree every gate compiles, so the first area gate is incremental, and proves nsh-core 0.4.0 resolves before any area starts.
+# Primes the repo's cargo cache with the dependency tree every gate compiles, so the first area gate is incremental, and proves nsh-core 0.6.0 resolves before any area starts.
 set -e
 ROOT=/Users/hmziq/fo/nsh-share
 command -v nsh >/dev/null || { echo "nsh CLI not found" >&2; exit 1; }
@@ -16,7 +16,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
-nsh-core = "0.4.0"
+nsh-core = "0.6.0"
 thiserror = "2.0.21"
 tokio = { version = "1.54.1", default-features = false, features = ["sync", "time"] }
 EOF
