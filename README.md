@@ -4,6 +4,18 @@ Outbound share of text, URLs, files and images, and inbound share into the app.
 
 Part of the Native Shell (NSH) capability set. Same layout as the other SuperNSH repos: a Rust crate, docs in `docs/`, CI on GitHub Actions, and a web status page on GitHub Pages at https://supernsh.github.io/share/. The outbound names follow Flutter's `share_plus`; the inbound design follows `receive_sharing_intent`. `docs/parity.md` maps every reference API to what it does here.
 
+## Install
+
+In the app's directory:
+
+```sh
+nsh add nsh-share
+```
+
+`nsh add` needs NSH main or the nightly: the 0.6.0 and 0.6.1 releases do not have it. In a Rust app, `cargo add nsh-share` works with any of them.
+
+TSX imports `nsh-share`, with `nsh-share/rust` and `nsh-share/memory` alongside it.
+
 ## Status
 
 **Implemented at the unit-test level.** The behaviors — one sheet at a time, exactly-once resolution, the six stable error codes, the cold-start read — are proven by `cargo test` and `nsh test` in CI, through the fake backend. Each bridge compiles in CI, in the job that owns its target: macOS and Windows in the rust job's OS matrix, iOS, Android and web in the cross-check job's targets. No device or emulator has run this code; nothing here is device-verified.
