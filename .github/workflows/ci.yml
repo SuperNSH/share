@@ -69,9 +69,9 @@ jobs:
           toolchain: stable
       - run: scripts/publish-crates.sh verify
       # Only for a crate with #[native_module]; the NSH releases up to 0.6.1 have no `nsh add`.
-      - name: Install NSH nightly
+      - name: Install NSH v0.7.1
         env:
-          NSH_VERSION: nightly
+          NSH_VERSION: v0.7.1
         run: |
           curl -fsSL https://raw.githubusercontent.com/SuperNSH/nsh-builds/master/install.sh | sh
           echo "$HOME/.nsh/bin" >> "$GITHUB_PATH"
@@ -123,7 +123,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install NSH
         env:
-          NSH_VERSION: v0.6.0
+          NSH_VERSION: v0.7.1
         run: |
           curl -fsSL https://raw.githubusercontent.com/SuperNSH/nsh-builds/master/install.sh | sh
           echo "$HOME/.nsh/bin" >> "$GITHUB_PATH"
